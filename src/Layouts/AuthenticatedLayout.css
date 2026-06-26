@@ -1,0 +1,225 @@
+/* AuthenticatedLayout — dashboard, patients, profile */
+
+.auth-layout {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.auth-layout__nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: var(--nav-height);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+  transition: box-shadow var(--transition-base);
+}
+
+.auth-layout__nav--scrolled {
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-layout__nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.auth-layout__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-weight: 800;
+  color: var(--color-text);
+  transition: opacity var(--transition-fast);
+}
+
+.auth-layout__brand:hover {
+  opacity: 0.85;
+}
+
+.auth-layout__brand-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  border-radius: var(--radius-md);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-layout__brand-text {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .auth-layout__brand-text {
+    display: inline;
+  }
+}
+
+.auth-layout__nav-links {
+  display: none;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 2rem;
+}
+
+@media (min-width: 768px) {
+  .auth-layout__nav-links {
+    display: flex;
+  }
+}
+
+.auth-layout__nav-link {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-md);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.auth-layout__nav-link:hover {
+  color: var(--color-text);
+  background: var(--color-bg-muted);
+}
+
+.auth-layout__nav-link--active {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.auth-layout__user-area {
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .auth-layout__user-area {
+    display: flex;
+  }
+}
+
+.auth-layout__role-badge {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-primary-hover);
+  background: var(--color-primary-light);
+  border-radius: var(--radius-full);
+}
+
+.auth-layout__user-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.375rem 0.75rem 0.375rem 0.375rem;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.auth-layout__user-btn:hover {
+  border-color: #cbd5e1;
+  box-shadow: var(--shadow-xs);
+}
+
+.auth-layout__avatar {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+}
+
+.auth-layout__user-name {
+  max-width: 7.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.auth-layout__mobile-toggle {
+  display: flex;
+  padding: 0.5rem;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .auth-layout__mobile-toggle {
+    display: none;
+  }
+}
+
+.auth-layout__mobile-menu {
+  border-top: 1px solid var(--color-border);
+  background: white;
+  padding: 0.75rem 1rem 1rem;
+  animation: slide-down var(--transition-base) forwards;
+}
+
+@media (min-width: 768px) {
+  .auth-layout__mobile-menu {
+    display: none;
+  }
+}
+
+.auth-layout__mobile-link {
+  display: block;
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.auth-layout__mobile-link:hover,
+.auth-layout__mobile-link--active {
+  background: var(--color-primary-light);
+  color: var(--color-primary-hover);
+}
+
+.auth-layout__page-header {
+  background: white;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.auth-layout__page-header-inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 1.75rem 1.5rem;
+}
+
+.auth-layout__main {
+  animation: fade-in var(--transition-smooth) forwards;
+}

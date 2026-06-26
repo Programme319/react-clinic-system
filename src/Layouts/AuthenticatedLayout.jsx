@@ -1,16 +1,22 @@
 import Dropdown from '@/Components/Dropdown';
-import NavLink from '@/Components/NavLink';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { useAuth } from '@/contexts/AuthContext';
 import { LayoutDashboard, Stethoscope, Users, Menu, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import './AuthenticatedLayout.css';
 
 export default function AuthenticatedLayout({ header, children }) {
   const { authUser, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const isActive = (path) => location.pathname.startsWith(path);
 
@@ -20,45 +26,44 @@ export default function AuthenticatedLayout({ header, children }) {
   };
 
   const navItems = [
-    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, active: isActive('/dashboard') && !isActive('/patients') },
-    { to: '/patients', label: 'Patients', icon: Users, active: isActive('/patients') },
+    { to: '/dashboard', label: 'Dashboard', active: isActive('/dashboard') && !isActive('/patients') },
+    { to: '/patients', label: 'Patients', active: isActive('/patients') },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <nav className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-8">
-            <Link to="/dashboard" className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-600 text-white shadow-sm">
-                <Stethoscope className="h-5 w-5" />
+    <div className="auth-layout">
+      <nav className={`auth-layout__nav ${scrolled ? 'auth-layout__nav--scrolled' : ''}`}>
+        <div className="auth-layout__nav-inner">
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Link to="/dashboard" className="auth-layout__brand">
+              <div className="auth-layout__brand-icon">
+                <Stethoscope size={18} />
               </div>
-              <span className="hidden font-bold text-slate-900 sm:inline">ClinicCare</span>
+              <span className="auth-layout__brand-text">ClinicCare</span>
             </Link>
 
-            <div className="hidden items-center gap-1 md:flex">
+            <div className="auth-layout__nav-links">
               {navItems.map(({ to, label, active }) => (
-                <NavLink key={to} to={to} active={active}>
+                <Link
+                  key={to}
+                  to={to}
+                  className={`auth-layout__nav-link ${active ? 'auth-layout__nav-link--active' : ''}`}
+                >
                   {label}
-                </NavLink>
+                </Link>
               ))}
             </div>
           </div>
 
-          <div className="hidden items-center gap-3 md:flex">
-            <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
-              {authUser?.role}
-            </span>
+          <div className="auth-layout__user-area">
+            <span className="auth-layout__role-badge">{authUser?.role}</span>
             <Dropdown>
               <Dropdown.Trigger>
-                <button
-                  type="button"
-                  className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-                >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600 text-xs font-bold text-white">
+                <button type="button" className="auth-layout__user-btn">
+                  <span className="auth-layout__avatar">
                     {authUser?.name?.charAt(0)?.toUpperCase() || 'U'}
                   </span>
-                  <span className="max-w-[120px] truncate">{authUser?.name}</span>
+                  <span className="auth-layout__user-name">{authUser?.name}</span>
                 </button>
               </Dropdown.Trigger>
               <Dropdown.Content>
@@ -76,30 +81,35 @@ export default function AuthenticatedLayout({ header, children }) {
 
           <button
             type="button"
-            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden"
+            className="auth-layout__mobile-toggle"
             onClick={() => setMobileOpen((v) => !v)}
           >
-            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
 
         {mobileOpen && (
-          <div className="border-t border-slate-200 bg-white px-4 py-3 md:hidden">
+          <div className="auth-layout__mobile-menu">
             {navItems.map(({ to, label, active }) => (
-              <ResponsiveNavLink key={to} to={to} active={active} onClick={() => setMobileOpen(false)}>
+              <Link
+                key={to}
+                to={to}
+                className={`auth-layout__mobile-link ${active ? 'auth-layout__mobile-link--active' : ''}`}
+                onClick={() => setMobileOpen(false)}
+              >
                 {label}
-              </ResponsiveNavLink>
+              </Link>
             ))}
-            <div className="mt-3 border-t border-slate-100 pt-3">
-              <p className="px-3 text-sm font-semibold text-slate-800">{authUser?.name}</p>
-              <p className="px-3 text-xs text-slate-500">{authUser?.email}</p>
-              <ResponsiveNavLink to="/profile" onClick={() => setMobileOpen(false)}>
+            <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--color-border-light)' }}>
+              <p style={{ padding: '0 1rem', fontWeight: 600, fontSize: '0.875rem' }}>{authUser?.name}</p>
+              <Link to="/profile" className="auth-layout__mobile-link" onClick={() => setMobileOpen(false)}>
                 Profile
-              </ResponsiveNavLink>
+              </Link>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="mt-1 w-full px-3 py-2 text-left text-sm text-red-600"
+                className="auth-layout__mobile-link"
+                style={{ color: '#ef4444', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer' }}
               >
                 Sign out
               </button>
@@ -109,12 +119,12 @@ export default function AuthenticatedLayout({ header, children }) {
       </nav>
 
       {header && (
-        <div className="border-b border-slate-200 bg-white">
-          <div className="page-container !py-6">{header}</div>
+        <div className="auth-layout__page-header">
+          <div className="auth-layout__page-header-inner">{header}</div>
         </div>
       )}
 
-      <main>{children}</main>
+      <main className="auth-layout__main">{children}</main>
     </div>
   );
 }

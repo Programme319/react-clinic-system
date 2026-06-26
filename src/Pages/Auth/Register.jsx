@@ -9,25 +9,19 @@ import supabase from '@/lib/supabase';
 import { isSupabaseConfigured } from '@/lib/supabaseConfig';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import '@/css/pages/auth.css';
 
 const ROLES = ['Clinic Staff', 'Doctor', 'Pharmacist', 'Administrator'];
 
 export default function Register() {
   const navigate = useNavigate();
-
   const [data, setData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    password_confirmation: '',
-    role: 'Clinic Staff',
+    name: '', email: '', password: '', password_confirmation: '', role: 'Clinic Staff',
   });
   const [processing, setProcessing] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const handleChange = (key, value) => {
-    setData((prev) => ({ ...prev, [key]: value }));
-  };
+  const handleChange = (key, value) => setData((prev) => ({ ...prev, [key]: value }));
 
   useEffect(() => {
     document.title = 'Register — ClinicCare';
@@ -39,7 +33,7 @@ export default function Register() {
     setErrors({});
 
     if (!isSupabaseConfigured || !supabase) {
-      setErrors({ general: 'Supabase is not configured. See the alert above.' });
+      setErrors({ general: 'Supabase is not configured.' });
       setProcessing(false);
       return;
     }
@@ -60,21 +54,14 @@ export default function Register() {
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email.trim(),
         password: data.password,
-        options: {
-          data: { name: data.name.trim(), role: data.role },
-        },
+        options: { data: { name: data.name.trim(), role: data.role } },
       });
-
       if (error) throw error;
 
       if (authData.user && !authData.session) {
-        setErrors({
-          general:
-            'Account created! Check your email to confirm, then sign in. (Or disable email confirmation in Supabase → Authentication → Email.)',
-        });
+        setErrors({ general: 'Account created! Check your email to confirm, then sign in.' });
         return;
       }
-
       navigate('/dashboard');
     } catch (error) {
       setErrors({ general: formatAuthError(error) });
@@ -87,93 +74,44 @@ export default function Register() {
   return (
     <GuestLayout title="Create your account" subtitle="Join ClinicCare in under a minute">
       <SupabaseSetupAlert />
+      <form onSubmit={submit} className="auth-form">
+        {errors.general && <div className="alert alert-error">{errors.general}</div>}
 
-      <form onSubmit={submit} className="space-y-5">
-        {errors.general && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {errors.general}
-          </div>
-        )}
-
-        <div>
+        <div className="auth-form__row">
           <InputLabel htmlFor="name" value="Full name" />
-          <TextInput
-            id="name"
-            value={data.name}
-            className="input-field"
-            autoComplete="name"
-            isFocused
-            onChange={(e) => handleChange('name', e.target.value)}
-            required
-          />
+          <TextInput id="name" value={data.name} className="input-field" isFocused onChange={(e) => handleChange('name', e.target.value)} required />
         </div>
 
-        <div>
+        <div className="auth-form__row">
           <InputLabel htmlFor="email" value="Work email" />
-          <TextInput
-            id="email"
-            type="email"
-            value={data.email}
-            className="input-field"
-            autoComplete="username"
-            onChange={(e) => handleChange('email', e.target.value)}
-            required
-          />
+          <TextInput id="email" type="email" value={data.email} className="input-field" onChange={(e) => handleChange('email', e.target.value)} required />
         </div>
 
-        <div>
+        <div className="auth-form__row">
           <InputLabel htmlFor="role" value="Role" />
-          <select
-            id="role"
-            value={data.role}
-            onChange={(e) => handleChange('role', e.target.value)}
-            className="input-field"
-          >
-            {ROLES.map((role) => (
-              <option key={role} value={role}>
-                {role}
-              </option>
-            ))}
+          <select id="role" value={data.role} onChange={(e) => handleChange('role', e.target.value)} className="auth-form__select">
+            {ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
           </select>
         </div>
 
-        <div>
+        <div className="auth-form__row">
           <InputLabel htmlFor="password" value="Password" />
-          <TextInput
-            id="password"
-            type="password"
-            value={data.password}
-            className="input-field"
-            autoComplete="new-password"
-            onChange={(e) => handleChange('password', e.target.value)}
-            required
-          />
-          <InputError message={errors.password} className="mt-2" />
+          <TextInput id="password" type="password" value={data.password} className="input-field" onChange={(e) => handleChange('password', e.target.value)} required />
+          <InputError message={errors.password} />
         </div>
 
-        <div>
+        <div className="auth-form__row">
           <InputLabel htmlFor="password_confirmation" value="Confirm password" />
-          <TextInput
-            id="password_confirmation"
-            type="password"
-            value={data.password_confirmation}
-            className="input-field"
-            autoComplete="new-password"
-            onChange={(e) => handleChange('password_confirmation', e.target.value)}
-            required
-          />
-          <InputError message={errors.password_confirmation} className="mt-2" />
+          <TextInput id="password_confirmation" type="password" value={data.password_confirmation} className="input-field" onChange={(e) => handleChange('password_confirmation', e.target.value)} required />
+          <InputError message={errors.password_confirmation} />
         </div>
 
-        <PrimaryButton className="w-full justify-center py-3" disabled={processing}>
+        <PrimaryButton className="btn-full" disabled={processing}>
           {processing ? 'Creating account…' : 'Create account'}
         </PrimaryButton>
 
-        <p className="text-center text-sm text-slate-500">
-          Already registered?{' '}
-          <Link to="/login" className="font-semibold text-teal-600 hover:text-teal-700">
-            Sign in
-          </Link>
+        <p className="guest-layout__form-footer">
+          Already registered? <Link to="/login" className="link-primary">Sign in</Link>
         </p>
       </form>
     </GuestLayout>

@@ -1,16 +1,8 @@
 import { Link, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  ArrowRight,
-  Stethoscope,
-  Shield,
-  Users,
-  FileText,
-  Clock,
-  HeartPulse,
-  CheckCircle2,
-} from 'lucide-react';
+import { ArrowRight, Stethoscope, Shield, Users, FileText, Clock, HeartPulse, CheckCircle2 } from 'lucide-react';
+import '@/css/pages/welcome.css';
 
 export default function Welcome() {
   const { authUser, loading } = useAuth();
@@ -23,206 +15,117 @@ export default function Welcome() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  if (!loading && authUser) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  if (!loading && authUser) return <Navigate to="/dashboard" replace />;
 
   const features = [
-    {
-      icon: <Users className="h-6 w-6 text-teal-600" />,
-      title: 'Patient Management',
-      desc: 'Register patients, track visits, and access full medical histories in seconds.',
-    },
-    {
-      icon: <FileText className="h-6 w-6 text-teal-600" />,
-      title: 'Medical Records',
-      desc: 'Store diagnoses, lab tests, and prescriptions — printable and bilingual.',
-    },
-    {
-      icon: <Shield className="h-6 w-6 text-teal-600" />,
-      title: 'Secure & Cloud-Based',
-      desc: 'Your data is protected with Supabase authentication and row-level security.',
-    },
+    { icon: Users, title: 'Patient Management', desc: 'Register patients, track visits, and access full medical histories in seconds.' },
+    { icon: FileText, title: 'Medical Records', desc: 'Store lab tests, medications, and prescriptions — printable and bilingual.' },
+    { icon: Shield, title: 'AI Health Assistant', desc: 'Ollama-powered chatbot with patient context for smarter clinic support.' },
   ];
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 antialiased">
-      <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled ? 'border-b border-gray-100 bg-white/95 shadow-sm backdrop-blur-md' : 'bg-transparent'
-        }`}
-      >
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-600">
-              <Stethoscope className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-gray-900">ClinicCare</span>
+    <div className="welcome">
+      <nav className={`welcome__nav ${scrolled ? 'welcome__nav--solid' : ''}`}>
+        <div className="welcome__nav-inner">
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="auth-layout__brand-icon"><Stethoscope size={18} /></div>
+            <span style={{ fontWeight: 800, fontSize: '1.125rem' }}>ClinicCare</span>
           </Link>
-
-          <div className="flex items-center gap-4">
-            <Link
-              to="/login"
-              className="text-sm font-medium text-gray-600 transition hover:text-gray-900"
-            >
-              Sign in
-            </Link>
-            <Link
-              to="/register"
-              className="rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-            >
-              Get Started
-            </Link>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <Link to="/login" className="link-primary" style={{ fontSize: '0.875rem' }}>Sign in</Link>
+            <Link to="/register" className="btn btn-primary btn-sm">Get Started</Link>
           </div>
         </div>
       </nav>
 
-      <section className="relative overflow-hidden px-6 pt-32 pb-20">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-teal-50 via-white to-cyan-50" />
-        <div className="relative mx-auto max-w-4xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-4 py-1.5 text-sm font-medium text-teal-700">
-            <HeartPulse className="h-4 w-4" />
-            Smart Clinic Management System
-          </div>
-
-          <h1 className="text-5xl font-bold leading-tight tracking-tight sm:text-6xl">
+      <section className="welcome__hero">
+        <div className="welcome__hero-bg" />
+        <div className="welcome__hero-inner">
+          <div className="welcome__badge"><HeartPulse size={16} /> Smart Clinic Management</div>
+          <h1 className="welcome__title">
             Manage your clinic{' '}
-            <span className="bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-              with confidence
-            </span>
+            <span className="welcome__title-accent">with confidence</span>
           </h1>
-
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-500">
-            ClinicCare helps doctors and staff organize patient records, diagnoses, and prescriptions —
-            all in one secure, easy-to-use platform. Arabic & English supported.
+          <p className="welcome__desc">
+            ClinicCare helps doctors and staff organize patient records, AI-assisted support, and prescriptions — all in one secure platform.
           </p>
-
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link
-              to="/register"
-              className="group inline-flex items-center gap-2 rounded-xl bg-teal-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-teal-600/20 transition hover:bg-teal-700"
-            >
-              Start Free
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+          <div className="welcome__cta">
+            <Link to="/register" className="btn btn-primary btn-lg">
+              Start Free <ArrowRight size={18} />
             </Link>
-            <Link
-              to="/login"
-              className="inline-flex items-center rounded-xl border border-gray-200 bg-white px-8 py-3.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-            >
-              Sign In
-            </Link>
+            <Link to="/login" className="btn btn-secondary btn-lg">Sign In</Link>
           </div>
         </div>
       </section>
 
-      <section className="px-6 pb-24">
-        <div className="mx-auto max-w-5xl">
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
-            <div className="flex items-center gap-2 border-b border-gray-100 bg-gray-50 px-4 py-3">
-              <div className="h-3 w-3 rounded-full bg-red-400" />
-              <div className="h-3 w-3 rounded-full bg-yellow-400" />
-              <div className="h-3 w-3 rounded-full bg-green-400" />
-              <span className="ml-2 text-xs text-gray-400">ClinicCare Dashboard</span>
+      <section className="welcome__preview">
+        <div className="welcome__preview-card card">
+          <div style={{ padding: '0.75rem 1rem', background: 'var(--color-bg-muted)', borderBottom: '1px solid var(--color-border)', display: 'flex', gap: '0.375rem' }}>
+            <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#f87171' }} />
+            <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#fbbf24' }} />
+            <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#34d399' }} />
+          </div>
+          <div style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+            <div style={{ padding: '1rem', background: 'var(--color-primary-light)', borderRadius: 'var(--radius-md)' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--color-primary)', fontWeight: 600 }}>Total Patients</p>
+              <p style={{ fontSize: '2rem', fontWeight: 800, margin: '0.25rem 0 0' }}>128</p>
             </div>
-            <div className="grid grid-cols-3 gap-4 p-6">
-              <div className="col-span-2 space-y-4">
-                <div className="rounded-xl border border-gray-100 bg-teal-50 p-4">
-                  <p className="text-xs font-medium text-teal-600">Total Patients</p>
-                  <p className="text-3xl font-bold text-gray-900">128</p>
-                </div>
-                <div className="h-32 rounded-xl border border-gray-100 bg-gray-50" />
-              </div>
-              <div className="space-y-4">
-                <div className="h-24 rounded-xl border border-gray-100 bg-gray-50" />
-                <div className="h-24 rounded-xl border border-gray-100 bg-gray-50" />
-                <div className="h-24 rounded-xl border border-gray-100 bg-gray-50" />
-              </div>
-            </div>
+            <div className="skeleton" style={{ height: '5rem' }} />
           </div>
         </div>
       </section>
 
-      <section className="bg-slate-50 px-6 py-24">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-16 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">Everything your clinic needs</h2>
-            <p className="mx-auto mt-4 max-w-lg text-gray-500">
-              Built for real clinics — from patient intake to printable medical reports.
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            {features.map((feature, i) => (
-              <div
-                key={i}
-                className="rounded-2xl border border-gray-200 bg-white p-8 transition hover:border-teal-200 hover:shadow-md"
-              >
-                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50">
-                  {feature.icon}
-                </div>
-                <h3 className="mb-2 text-lg font-semibold">{feature.title}</h3>
-                <p className="text-sm leading-relaxed text-gray-500">{feature.desc}</p>
+      <section className="welcome__features">
+        <div className="welcome__features-inner">
+          <h2 className="welcome__section-title">Everything your clinic needs</h2>
+          <p className="welcome__section-desc">Built for real clinics — from patient intake to AI-powered assistance.</p>
+          <div className="welcome__feature-grid">
+            {features.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="welcome__feature-card">
+                <div className="welcome__feature-icon"><Icon size={22} /></div>
+                <h3 className="welcome__feature-title">{title}</h3>
+                <p className="welcome__feature-desc">{desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="px-6 py-24">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {[
-              { value: '100%', label: 'Cloud Secure', icon: <Shield className="h-4 w-4" /> },
-              { value: '24/7', label: 'Access Anywhere', icon: <Clock className="h-4 w-4" /> },
-              { value: 'AR/EN', label: 'Bilingual UI', icon: <FileText className="h-4 w-4" /> },
-              { value: 'Free', label: 'To Get Started', icon: <CheckCircle2 className="h-4 w-4" /> },
-            ].map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-                  {stat.icon}
-                </div>
-                <div className="text-3xl font-bold text-gray-900">{stat.value}</div>
-                <div className="mt-1 text-sm font-medium text-gray-400">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+      <section className="welcome__stats">
+        <div className="welcome__stats-grid">
+          {[
+            { value: '100%', label: 'Cloud Secure', icon: Shield },
+            { value: '24/7', label: 'Access Anywhere', icon: Clock },
+            { value: 'AI', label: 'Ollama Powered', icon: HeartPulse },
+            { value: 'Free', label: 'To Get Started', icon: CheckCircle2 },
+          ].map(({ value, label, icon: Icon }) => (
+            <div key={label} className="welcome__stat-item">
+              <div className="welcome__stat-icon"><Icon size={16} /></div>
+              <div className="welcome__stat-value">{value}</div>
+              <div className="welcome__stat-label">{label}</div>
+            </div>
+          ))}
         </div>
       </section>
 
-      <section className="bg-gradient-to-br from-teal-700 to-cyan-800 px-6 py-24 text-white">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Ready to modernize your clinic?
-          </h2>
-          <p className="mx-auto mt-4 max-w-md text-teal-100">
-            Create your free account and start managing patients in minutes.
-          </p>
-          <Link
-            to="/register"
-            className="group mt-10 inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-sm font-semibold text-teal-800 shadow-lg transition hover:bg-teal-50"
-          >
-            Create Free Account
-            <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-          </Link>
-        </div>
+      <section className="welcome__cta-section">
+        <h2>Ready to modernize your clinic?</h2>
+        <p>Create your free account and start managing patients in minutes.</p>
+        <Link to="/register" className="btn btn-primary btn-lg">
+          Create Free Account <ArrowRight size={18} />
+        </Link>
       </section>
 
-      <footer className="border-t border-gray-100 px-6 py-12">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 md:flex-row">
-          <div className="flex items-center gap-2">
-            <Stethoscope className="h-5 w-5 text-teal-600" />
-            <span className="font-bold text-gray-900">ClinicCare</span>
+      <footer className="welcome__footer">
+        <div className="welcome__footer-inner">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Stethoscope size={18} style={{ color: 'var(--color-primary)' }} />
+            <span style={{ fontWeight: 700 }}>ClinicCare</span>
           </div>
-          <p className="text-sm text-gray-400">
-            © {new Date().getFullYear()} ClinicCare. Smart clinic management.
-          </p>
-          <div className="flex gap-6">
-            <Link to="/login" className="text-sm text-gray-500 hover:text-gray-700">
-              Sign in
-            </Link>
-            <Link to="/register" className="text-sm text-gray-500 hover:text-gray-700">
-              Register
-            </Link>
+          <p className="welcome__footer-copy">© {new Date().getFullYear()} ClinicCare</p>
+          <div className="welcome__footer-links">
+            <Link to="/login">Sign in</Link>
+            <Link to="/register">Register</Link>
           </div>
         </div>
       </footer>

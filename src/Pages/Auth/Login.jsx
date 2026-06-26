@@ -10,22 +10,16 @@ import supabase from '@/lib/supabase';
 import { isSupabaseConfigured } from '@/lib/supabaseConfig';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import '@/css/pages/auth.css';
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const [processing, setProcessing] = useState(false);
   const [errors, setErrors] = useState({});
+  const [data, setDataState] = useState({ email: '', password: '', remember: false });
 
-  const [data, setDataState] = useState({
-    email: '',
-    password: '',
-    remember: false,
-  });
-
-  const setData = (key, value) => {
-    setDataState((prev) => ({ ...prev, [key]: value }));
-  };
+  const setData = (key, value) => setDataState((prev) => ({ ...prev, [key]: value }));
 
   useEffect(() => {
     document.title = 'Sign in — ClinicCare';
@@ -37,7 +31,7 @@ export default function Login() {
     setErrors({});
 
     if (!isSupabaseConfigured || !supabase) {
-      setErrors({ general: 'Supabase is not configured. See the alert above.' });
+      setErrors({ general: 'Supabase is not configured.' });
       setProcessing(false);
       return;
     }
@@ -47,9 +41,7 @@ export default function Login() {
         email: data.email.trim(),
         password: data.password,
       });
-
       if (error) throw error;
-
       navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
     } catch (err) {
       setErrors({ general: formatAuthError(err) });
@@ -62,15 +54,10 @@ export default function Login() {
   return (
     <GuestLayout title="Welcome back" subtitle="Sign in to manage your clinic">
       <SupabaseSetupAlert />
+      <form onSubmit={submit} className="auth-form">
+        {errors.general && <div className="alert alert-error">{errors.general}</div>}
 
-      <form onSubmit={submit} className="space-y-5">
-        {errors.general && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {errors.general}
-          </div>
-        )}
-
-        <div>
+        <div className="auth-form__row">
           <InputLabel htmlFor="email" value="Email address" />
           <TextInput
             id="email"
@@ -81,10 +68,10 @@ export default function Login() {
             isFocused
             onChange={(e) => setData('email', e.target.value)}
           />
-          <InputError message={errors.email} className="mt-2" />
+          <InputError message={errors.email} />
         </div>
 
-        <div>
+        <div className="auth-form__row">
           <InputLabel htmlFor="password" value="Password" />
           <TextInput
             id="password"
@@ -94,31 +81,22 @@ export default function Login() {
             autoComplete="current-password"
             onChange={(e) => setData('password', e.target.value)}
           />
-          <InputError message={errors.password} className="mt-2" />
         </div>
 
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2">
-            <Checkbox
-              checked={data.remember}
-              onChange={(e) => setData('remember', e.target.checked)}
-            />
-            <span className="text-sm text-slate-600">Remember me</span>
+        <div className="guest-layout__form-actions">
+          <label className="guest-layout__remember">
+            <Checkbox checked={data.remember} onChange={(e) => setData('remember', e.target.checked)} />
+            Remember me
           </label>
-          <Link to="/forgot-password" className="text-sm font-medium text-teal-600 hover:text-teal-700">
-            Forgot password?
-          </Link>
+          <Link to="/forgot-password" className="link-primary">Forgot password?</Link>
         </div>
 
-        <PrimaryButton className="w-full justify-center py-3" disabled={processing}>
+        <PrimaryButton className="btn-full" disabled={processing}>
           {processing ? 'Signing in…' : 'Sign in'}
         </PrimaryButton>
 
-        <p className="text-center text-sm text-slate-500">
-          No account?{' '}
-          <Link to="/register" className="font-semibold text-teal-600 hover:text-teal-700">
-            Create one
-          </Link>
+        <p className="guest-layout__form-footer">
+          No account? <Link to="/register" className="link-primary">Create one</Link>
         </p>
       </form>
     </GuestLayout>
