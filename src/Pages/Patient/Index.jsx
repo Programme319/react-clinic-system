@@ -1,112 +1,154 @@
-import React from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import supabase from '@/lib/supabase';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Users, Plus, Search, Loader2 } from 'lucide-react';
 
-export default function Index({ auth, patients, filters = {} }) {
-  const navigate = useNavigate();
-  const [search, setSearch] = useState(filters.search || "");
+export default function Index() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // 1. Title synchronization decoupled from Inertia <Head>
   useEffect(() => {
-    document.title = "سجل المرضى";
+    document.title = 'سجل المرضى - ClinicCare';
   }, []);
 
-  // 2. Client-side URL state sync with standard React Router navigation
   useEffect(() => {
     const timer = setTimeout(() => {
-      const queryParams = new URLSearchParams();
-      if (search) {
-        queryParams.set("search", search);
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      setSearchParams(params, { replace: true });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, setSearchParams]);
+
+  useEffect(() => {
+    async function fetchPatients() {
+      setLoading(true);
+      setError(null);
+
+      let query = supabase
+        .from('patients')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (search.trim()) {
+        query = query.or(
+          `full_name.ilike.%${search.trim()}%,national_id.ilike.%${search.trim()}%`,
+        );
       }
 
-      // Replaces router.get updates smoothly without full page reloads
-      navigate(`/patients?${queryParams.toString()}`, { replace: true });
-    }, 300);
+      const { data, error: fetchError } = await query;
 
-    return () => clearTimeout(timer);
-  }, [search, navigate]);
+      if (fetchError) {
+        setError(fetchError.message);
+        setPatients([]);
+      } else {
+        setPatients(data || []);
+      }
+      setLoading(false);
+    }
+
+    fetchPatients();
+  }, [search]);
 
   return (
-    <AuthenticatedLayout user={auth.user}>
-      <div className="py-12 bg-gray-100 min-h-screen">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-cyan-600">
-            <h2 className="text-2xl font-bold text-gray-800 m-auto pb-16 text-center">
-              قائمة المرضى (Patient List)
-            </h2>
-
-            <div className="flex flex-col md:flex-row justify-between items-center mb-16 gap-2">
-              {/* Search Input */}
-              <div className="relative w-full md:w-1/3">
+    <AuthenticatedLayout
+      header={
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800">Patient Records</h2>
+            <p className="text-sm text-gray-500">قائمة المرضى — manage all clinic patients</p>
+          </div>
+          <Link
+            to="/patients/create"
+            className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-700"
+          >
+            <Plus className="h-4 w-4" />
+            Add Patient
+          </Link>
+        </div>
+      }
+    >
+      <div className="py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="border-b border-gray-100 bg-gray-50 px-6 py-4">
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="بحث بالاسم أو الرقم القومي..."
-                  className="w-full border-gray-300 rounded-lg focus:ring-cyan-500 shadow-sm"
+                  placeholder="Search by name or national ID..."
+                  className="w-full rounded-lg border border-gray-200 py-2.5 pl-10 pr-4 text-sm focus:border-teal-500 focus:ring-teal-500"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-
-              {/* 3. Replaced Inertia 'href' properties with React Router 'to' paths */}
-              <Link
-                to="/patients/create"
-                className="w-2rem md:w-auto px-6 py-2.5 bg-cyan-600 text-white rounded-lg font-bold shadow-md hover:bg-cyan-700 transition flex items-center justify-center gap-2"
-              >
-                <span>+</span>
-                إضافة مريض جديد
-              </Link>
-
-              <Link
-                to="/users/create"
-                className="px-4 py-2 bg-slate-800 text-white rounded-md font-bold text-xs hover:bg-slate-700 transition flex items-center gap-2"
-              >
-                إضافة حساب طبيب (Add Doctor)
-              </Link>
             </div>
 
-            {/* Patient Records Display Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-right border-collapse">
-                <thead>
-                  <tr className="bg-cyan-50 text-gray-700">
-                    <th className="p-4 border-b text-center">رقم التذكرة</th>
-                    <th className="p-4 border-b text-right">الاسم بالكامل</th>
-                    <th className="p-4 border-b">الرقم القومي</th>
-                    <th className="p-4 border-b text-center">الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {patients && patients.length > 0 ? (
-                    patients.map((p) => (
-                      <tr key={p.id} className="hover:bg-gray-50 transition">
-                        <td className="p-4 border-b text-center font-mono">
-                          #{p.id}
-                        </td>
-                        <td className="p-4 border-b font-bold">
-                          {p.full_name}
-                        </td>
-                        <td className="p-4 border-b">{p.national_id}</td>
-                        <td className="p-4 border-b text-center">
+            {error && (
+              <div className="mx-6 mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}. Make sure you ran the SQL schema in Supabase.
+              </div>
+            )}
+
+            {loading ? (
+              <div className="flex items-center justify-center py-20 text-gray-400">
+                <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                Loading patients...
+              </div>
+            ) : patients.length === 0 ? (
+              <div className="py-20 text-center">
+                <Users className="mx-auto h-12 w-12 text-gray-300" />
+                <p className="mt-4 font-medium text-gray-600">No patients found</p>
+                <p className="mt-1 text-sm text-gray-400">
+                  {search ? 'Try a different search term.' : 'Add your first patient to get started.'}
+                </p>
+                {!search && (
+                  <Link
+                    to="/patients/create"
+                    className="mt-6 inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Patient
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      <th className="px-6 py-4">Ticket #</th>
+                      <th className="px-6 py-4">Full Name</th>
+                      <th className="px-6 py-4">National ID</th>
+                      <th className="px-6 py-4">Age</th>
+                      <th className="px-6 py-4 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {patients.map((p) => (
+                      <tr key={p.id} className="transition hover:bg-gray-50">
+                        <td className="px-6 py-4 font-mono text-sm text-teal-600">#{p.id}</td>
+                        <td className="px-6 py-4 font-medium text-gray-900">{p.full_name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{p.national_id || '—'}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{p.age ?? '—'}</td>
+                        <td className="px-6 py-4 text-center">
                           <Link
                             to={`/patients/${p.id}`}
-                            className="text-cyan-600 hover:text-cyan-800 font-bold underline"
+                            className="text-sm font-semibold text-teal-600 hover:text-teal-800"
                           >
-                            عرض التفاصيل
+                            View details
                           </Link>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="4" className="p-8 text-center text-gray-500">
-                        لا يوجد نتائج تطابق البحث.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>

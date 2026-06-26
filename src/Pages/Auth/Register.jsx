@@ -3,162 +3,154 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Link, useNavigate } from 'react-router-dom'; 
+import supabase from '@/lib/supabase';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import axios from 'axios'; // Ensure axios or your chosen API client is imported
 
 export default function Register() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    // 1. Replaced useForm state management with standard individual/grouped useState
-    const [data, setData] = useState({
-        name: '',
-        email: '',
+  const [data, setData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+  });
+  const [processing, setProcessing] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const handleChange = (key, value) => {
+    setData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  useEffect(() => {
+    document.title = 'Register - Clinic System';
+  }, []);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setProcessing(true);
+    setErrors({});
+
+    if (data.password !== data.password_confirmation) {
+      setErrors({ password_confirmation: 'Passwords do not match.' });
+      setProcessing(false);
+      return;
+    }
+
+    if (data.password.length < 6) {
+      setErrors({ password: 'Password must be at least 6 characters.' });
+      setProcessing(false);
+      return;
+    }
+
+    try {
+      const { data: authData, error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: { name: data.name },
+        },
+      });
+
+      if (error) throw error;
+
+      if (authData.user && !authData.session) {
+        setErrors({
+          email: 'Check your email to confirm your account before signing in.',
+        });
+        return;
+      }
+
+      navigate('/dashboard');
+    } catch (error) {
+      setErrors({ email: error.message || 'Registration failed. Please try again.' });
+      setData((prev) => ({
+        ...prev,
         password: '',
         password_confirmation: '',
-    });
-    const [processing, setProcessing] = useState(false);
-    const [errors, setErrors] = useState({});
+      }));
+    } finally {
+      setProcessing(false);
+    }
+  };
 
-    // Helper to handle change events cleanly for grouped state
-    const handleChange = (key, value) => {
-        setData(prevData => ({
-            ...prevData,
-            [key]: value
-        }));
-    };
+  return (
+    <GuestLayout title="Create account" subtitle="Start managing your clinic today">
+      <form onSubmit={submit} className="space-y-1">
+        <div>
+          <InputLabel htmlFor="name" value="Full name" />
+          <TextInput
+            id="name"
+            name="name"
+            value={data.name}
+            className="mt-1 block w-full"
+            autoComplete="name"
+            isFocused={true}
+            onChange={(e) => handleChange('name', e.target.value)}
+            required
+          />
+          <InputError message={errors.name} className="mt-2" />
+        </div>
 
-    // Document title management replacing Inertia's <Head>
-    useEffect(() => {
-        document.title = "Register";
-    }, []);
+        <div className="mt-4">
+          <InputLabel htmlFor="email" value="Email" />
+          <TextInput
+            id="email"
+            type="email"
+            name="email"
+            value={data.email}
+            className="mt-1 block w-full"
+            autoComplete="username"
+            onChange={(e) => handleChange('email', e.target.value)}
+            required
+          />
+          <InputError message={errors.email} className="mt-2" />
+        </div>
 
-    const submit = async (e) => {
-        e.preventDefault();
-        setProcessing(true);
-        setErrors({});
+        <div className="mt-4">
+          <InputLabel htmlFor="password" value="Password" />
+          <TextInput
+            id="password"
+            type="password"
+            name="password"
+            value={data.password}
+            className="mt-1 block w-full"
+            autoComplete="new-password"
+            onChange={(e) => handleChange('password', e.target.value)}
+            required
+          />
+          <InputError message={errors.password} className="mt-2" />
+        </div>
 
-        try {
-            // 2. Replaced post(route('register')) with a standard API endpoint
-            const response = await axios.post('/api/register', data);
-            
-            // On successful registration, clear form and redirect
-            setData({ name: '', email: '', password: '', password_confirmation: '' });
-            navigate('/dashboard'); // Update to your post-register destination path
-        } catch (error) {
-            // Handle validation errors from Laravel backend API
-            if (error.response && error.response.status === 422) {
-                setErrors(error.response.data.errors);
-            } else {
-                console.error("An unexpected error occurred during registration:", error);
-            }
-            
-            // Replicating onFinish: Reset password fields on error or request finalization
-            setData(prevData => ({
-                ...prevData,
-                password: '',
-                password_confirmation: ''
-            }));
-        } finally {
-            setProcessing(false);
-        }
-    };
+        <div className="mt-4">
+          <InputLabel htmlFor="password_confirmation" value="Confirm password" />
+          <TextInput
+            id="password_confirmation"
+            type="password"
+            name="password_confirmation"
+            value={data.password_confirmation}
+            className="mt-1 block w-full"
+            autoComplete="new-password"
+            onChange={(e) => handleChange('password_confirmation', e.target.value)}
+            required
+          />
+          <InputError message={errors.password_confirmation} className="mt-2" />
+        </div>
 
-    return (
-        <GuestLayout>
-            {/* Removed Inertia's <Head /> component */}
+        <div className="mt-6 flex justify-end">
+          <PrimaryButton disabled={processing}>
+            {processing ? 'Creating account...' : 'Register'}
+          </PrimaryButton>
+        </div>
 
-            <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="name" value="Name" />
-
-                    <TextInput
-                        id="name"
-                        name="name"
-                        value={data.name}
-                        className="mt-1 block w-full"
-                        autoComplete="name"
-                        isFocused={true}
-                        onChange={(e) => handleChange('name', e.target.value)}
-                        required
-                    />
-
-                    <InputError message={errors.name?.[0]} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel htmlFor="email" value="Email" />
-
-                    <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        className="mt-1 block w-full"
-                        autoComplete="username"
-                        onChange={(e) => handleChange('email', e.target.value)}
-                        required
-                    />
-
-                    <InputError message={errors.email?.[0]} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
-
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        onChange={(e) => handleChange('password', e.target.value)}
-                        required
-                    />
-
-                    <InputError message={errors.password?.[0]} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Confirm Password"
-                    />
-
-                    <TextInput
-                        id="password_confirmation"
-                        type="password"
-                        name="password_confirmation"
-                        value={data.password_confirmation}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        onChange={(e) =>
-                            handleChange('password_confirmation', e.target.value)
-                        }
-                        required
-                    />
-
-                    <InputError
-                        message={errors.password_confirmation?.[0]}
-                        className="mt-2"
-                    />
-                </div>
-
-                <div className="mt-4 flex items-center justify-end">
-                    {/* 3. Replaced route('login') inside href with a standard React Router link 'to' prop */}
-                    <Link
-                        to="/login"
-                        className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Already registered?
-                    </Link>
-
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Register
-                    </PrimaryButton>
-                </div>
-            </form>
-        </GuestLayout>
-    );
+        <p className="mt-6 text-center text-sm text-gray-500">
+          Already have an account?{' '}
+          <Link to="/login" className="font-medium text-teal-600 hover:text-teal-800">
+            Sign in
+          </Link>
+        </p>
+      </form>
+    </GuestLayout>
+  );
 }
