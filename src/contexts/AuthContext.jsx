@@ -1,30 +1,41 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import supabase from '@/lib/supabase';
+import { isSupabaseConfigured } from '@/lib/supabaseConfig';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const [staffProfile, setStaffProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (userId) => {
+  const fetchStaffProfile = useCallback(async (userId) => {
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     const { data } = await supabase
-      .from('profiles')
+      .from('users')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
 
-    setProfile(data);
+    setStaffProfile(data);
     setLoading(false);
   }, []);
 
   useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) {
+      setLoading(false);
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
-        fetchProfile(currentUser.id);
+        fetchStaffProfile(currentUser.id);
       } else {
         setLoading(false);
       }
@@ -36,20 +47,20 @@ export function AuthProvider({ children }) {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
-        fetchProfile(currentUser.id);
+        fetchStaffProfile(currentUser.id);
       } else {
-        setProfile(null);
+        setStaffProfile(null);
         setLoading(false);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchProfile]);
+  }, [fetchStaffProfile]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (supabase) await supabase.auth.signOut();
     setUser(null);
-    setProfile(null);
+    setStaffProfile(null);
   };
 
   const authUser = user
@@ -57,15 +68,16 @@ export function AuthProvider({ children }) {
         id: user.id,
         email: user.email,
         name:
-          profile?.name ||
+          staffProfile?.name ||
           user.user_metadata?.name ||
           user.email?.split('@')[0] ||
           'User',
+        role: staffProfile?.role || 'Clinic Staff',
       }
     : null;
 
   return (
-    <AuthContext.Provider value={{ user, profile, authUser, loading, signOut }}>
+    <AuthContext.Provider value={{ user, staffProfile, authUser, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

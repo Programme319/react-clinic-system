@@ -2,13 +2,16 @@ import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
+import SupabaseSetupAlert from '@/Components/SupabaseSetupAlert';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
+import { formatAuthError } from '@/lib/authErrors';
 import supabase from '@/lib/supabase';
+import { isSupabaseConfigured } from '@/lib/supabaseConfig';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
-export default function Login({ status, canResetPassword = true }) {
+export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const [processing, setProcessing] = useState(false);
@@ -25,7 +28,7 @@ export default function Login({ status, canResetPassword = true }) {
   };
 
   useEffect(() => {
-    document.title = 'Log in - Clinic System';
+    document.title = 'Sign in — ClinicCare';
   }, []);
 
   const submit = async (e) => {
@@ -33,20 +36,23 @@ export default function Login({ status, canResetPassword = true }) {
     setProcessing(true);
     setErrors({});
 
+    if (!isSupabaseConfigured || !supabase) {
+      setErrors({ general: 'Supabase is not configured. See the alert above.' });
+      setProcessing(false);
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
+        email: data.email.trim(),
         password: data.password,
       });
 
       if (error) throw error;
 
-      const redirectTo = location.state?.from?.pathname || '/dashboard';
-      navigate(redirectTo, { replace: true });
+      navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
     } catch (err) {
-      setErrors({
-        email: err.message || 'Invalid email or password.',
-      });
+      setErrors({ general: formatAuthError(err) });
       setData('password', '');
     } finally {
       setProcessing(false);
@@ -54,71 +60,64 @@ export default function Login({ status, canResetPassword = true }) {
   };
 
   return (
-    <GuestLayout title="Welcome back" subtitle="Sign in to your clinic account">
-      {status && (
-        <div className="mb-4 text-sm font-medium text-green-600">{status}</div>
-      )}
+    <GuestLayout title="Welcome back" subtitle="Sign in to manage your clinic">
+      <SupabaseSetupAlert />
 
-      <form onSubmit={submit} className="space-y-1">
+      <form onSubmit={submit} className="space-y-5">
+        {errors.general && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errors.general}
+          </div>
+        )}
+
         <div>
-          <InputLabel htmlFor="email" value="Email" />
+          <InputLabel htmlFor="email" value="Email address" />
           <TextInput
             id="email"
             type="email"
-            name="email"
             value={data.email}
-            className="mt-1 block w-full"
+            className="input-field"
             autoComplete="username"
-            isFocused={true}
+            isFocused
             onChange={(e) => setData('email', e.target.value)}
           />
           <InputError message={errors.email} className="mt-2" />
         </div>
 
-        <div className="mt-4">
+        <div>
           <InputLabel htmlFor="password" value="Password" />
           <TextInput
             id="password"
             type="password"
-            name="password"
             value={data.password}
-            className="mt-1 block w-full"
+            className="input-field"
             autoComplete="current-password"
             onChange={(e) => setData('password', e.target.value)}
           />
           <InputError message={errors.password} className="mt-2" />
         </div>
 
-        <div className="mt-4 block">
-          <label className="flex items-center">
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-2">
             <Checkbox
-              name="remember"
               checked={data.remember}
               onChange={(e) => setData('remember', e.target.checked)}
             />
-            <span className="ms-2 text-sm text-gray-600">Remember me</span>
+            <span className="text-sm text-slate-600">Remember me</span>
           </label>
+          <Link to="/forgot-password" className="text-sm font-medium text-teal-600 hover:text-teal-700">
+            Forgot password?
+          </Link>
         </div>
 
-        <div className="mt-6 flex items-center justify-between gap-4">
-          {canResetPassword && (
-            <Link
-              to="/forgot-password"
-              className="text-sm text-teal-600 hover:text-teal-800"
-            >
-              Forgot password?
-            </Link>
-          )}
+        <PrimaryButton className="w-full justify-center py-3" disabled={processing}>
+          {processing ? 'Signing in…' : 'Sign in'}
+        </PrimaryButton>
 
-          <PrimaryButton disabled={processing}>
-            {processing ? 'Signing in...' : 'Log in'}
-          </PrimaryButton>
-        </div>
-
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Don&apos;t have an account?{' '}
-          <Link to="/register" className="font-medium text-teal-600 hover:text-teal-800">
-            Register
+        <p className="text-center text-sm text-slate-500">
+          No account?{' '}
+          <Link to="/register" className="font-semibold text-teal-600 hover:text-teal-700">
+            Create one
           </Link>
         </p>
       </form>

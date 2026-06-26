@@ -1,11 +1,16 @@
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
+import SupabaseSetupAlert from '@/Components/SupabaseSetupAlert';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
+import { formatAuthError } from '@/lib/authErrors';
 import supabase from '@/lib/supabase';
+import { isSupabaseConfigured } from '@/lib/supabaseConfig';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+
+const ROLES = ['Clinic Staff', 'Doctor', 'Pharmacist', 'Administrator'];
 
 export default function Register() {
   const navigate = useNavigate();
@@ -15,6 +20,7 @@ export default function Register() {
     email: '',
     password: '',
     password_confirmation: '',
+    role: 'Clinic Staff',
   });
   const [processing, setProcessing] = useState(false);
   const [errors, setErrors] = useState({});
@@ -24,13 +30,19 @@ export default function Register() {
   };
 
   useEffect(() => {
-    document.title = 'Register - Clinic System';
+    document.title = 'Register — ClinicCare';
   }, []);
 
   const submit = async (e) => {
     e.preventDefault();
     setProcessing(true);
     setErrors({});
+
+    if (!isSupabaseConfigured || !supabase) {
+      setErrors({ general: 'Supabase is not configured. See the alert above.' });
+      setProcessing(false);
+      return;
+    }
 
     if (data.password !== data.password_confirmation) {
       setErrors({ password_confirmation: 'Passwords do not match.' });
@@ -46,10 +58,10 @@ export default function Register() {
 
     try {
       const { data: authData, error } = await supabase.auth.signUp({
-        email: data.email,
+        email: data.email.trim(),
         password: data.password,
         options: {
-          data: { name: data.name },
+          data: { name: data.name.trim(), role: data.role },
         },
       });
 
@@ -57,65 +69,81 @@ export default function Register() {
 
       if (authData.user && !authData.session) {
         setErrors({
-          email: 'Check your email to confirm your account before signing in.',
+          general:
+            'Account created! Check your email to confirm, then sign in. (Or disable email confirmation in Supabase → Authentication → Email.)',
         });
         return;
       }
 
       navigate('/dashboard');
     } catch (error) {
-      setErrors({ email: error.message || 'Registration failed. Please try again.' });
-      setData((prev) => ({
-        ...prev,
-        password: '',
-        password_confirmation: '',
-      }));
+      setErrors({ general: formatAuthError(error) });
+      setData((prev) => ({ ...prev, password: '', password_confirmation: '' }));
     } finally {
       setProcessing(false);
     }
   };
 
   return (
-    <GuestLayout title="Create account" subtitle="Start managing your clinic today">
-      <form onSubmit={submit} className="space-y-1">
+    <GuestLayout title="Create your account" subtitle="Join ClinicCare in under a minute">
+      <SupabaseSetupAlert />
+
+      <form onSubmit={submit} className="space-y-5">
+        {errors.general && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errors.general}
+          </div>
+        )}
+
         <div>
           <InputLabel htmlFor="name" value="Full name" />
           <TextInput
             id="name"
-            name="name"
             value={data.name}
-            className="mt-1 block w-full"
+            className="input-field"
             autoComplete="name"
-            isFocused={true}
+            isFocused
             onChange={(e) => handleChange('name', e.target.value)}
             required
           />
-          <InputError message={errors.name} className="mt-2" />
         </div>
 
-        <div className="mt-4">
-          <InputLabel htmlFor="email" value="Email" />
+        <div>
+          <InputLabel htmlFor="email" value="Work email" />
           <TextInput
             id="email"
             type="email"
-            name="email"
             value={data.email}
-            className="mt-1 block w-full"
+            className="input-field"
             autoComplete="username"
             onChange={(e) => handleChange('email', e.target.value)}
             required
           />
-          <InputError message={errors.email} className="mt-2" />
         </div>
 
-        <div className="mt-4">
+        <div>
+          <InputLabel htmlFor="role" value="Role" />
+          <select
+            id="role"
+            value={data.role}
+            onChange={(e) => handleChange('role', e.target.value)}
+            className="input-field"
+          >
+            {ROLES.map((role) => (
+              <option key={role} value={role}>
+                {role}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
           <InputLabel htmlFor="password" value="Password" />
           <TextInput
             id="password"
             type="password"
-            name="password"
             value={data.password}
-            className="mt-1 block w-full"
+            className="input-field"
             autoComplete="new-password"
             onChange={(e) => handleChange('password', e.target.value)}
             required
@@ -123,14 +151,13 @@ export default function Register() {
           <InputError message={errors.password} className="mt-2" />
         </div>
 
-        <div className="mt-4">
+        <div>
           <InputLabel htmlFor="password_confirmation" value="Confirm password" />
           <TextInput
             id="password_confirmation"
             type="password"
-            name="password_confirmation"
             value={data.password_confirmation}
-            className="mt-1 block w-full"
+            className="input-field"
             autoComplete="new-password"
             onChange={(e) => handleChange('password_confirmation', e.target.value)}
             required
@@ -138,15 +165,13 @@ export default function Register() {
           <InputError message={errors.password_confirmation} className="mt-2" />
         </div>
 
-        <div className="mt-6 flex justify-end">
-          <PrimaryButton disabled={processing}>
-            {processing ? 'Creating account...' : 'Register'}
-          </PrimaryButton>
-        </div>
+        <PrimaryButton className="w-full justify-center py-3" disabled={processing}>
+          {processing ? 'Creating account…' : 'Create account'}
+        </PrimaryButton>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Already have an account?{' '}
-          <Link to="/login" className="font-medium text-teal-600 hover:text-teal-800">
+        <p className="text-center text-sm text-slate-500">
+          Already registered?{' '}
+          <Link to="/login" className="font-semibold text-teal-600 hover:text-teal-700">
             Sign in
           </Link>
         </p>

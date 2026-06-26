@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import supabase from '@/lib/supabase';
 import { Link } from 'react-router-dom';
-import { Users, UserPlus, ClipboardList, ArrowRight } from 'lucide-react';
+import { Users, UserPlus, ClipboardList, ArrowRight, Activity } from 'lucide-react';
 
 export default function Dashboard() {
   const { authUser } = useAuth();
@@ -11,11 +11,13 @@ export default function Dashboard() {
   const [recentPatients, setRecentPatients] = useState([]);
 
   useEffect(() => {
-    document.title = 'Dashboard - ClinicCare';
+    document.title = 'Dashboard — ClinicCare';
   }, []);
 
   useEffect(() => {
     async function loadStats() {
+      if (!supabase) return;
+
       const { count } = await supabase
         .from('patients')
         .select('*', { count: 'exact', head: true });
@@ -24,7 +26,7 @@ export default function Dashboard() {
 
       const { data } = await supabase
         .from('patients')
-        .select('id, full_name, national_id, created_at')
+        .select('id, name, phone, created_at')
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -34,102 +36,99 @@ export default function Dashboard() {
     loadStats();
   }, []);
 
+  const cards = [
+    {
+      label: 'Total patients',
+      value: patientCount,
+      icon: Users,
+      color: 'from-teal-500 to-emerald-600',
+    },
+    {
+      label: 'Your role',
+      value: authUser?.role || 'Staff',
+      icon: Activity,
+      color: 'from-violet-500 to-purple-600',
+      isText: true,
+    },
+  ];
+
   return (
     <AuthenticatedLayout
       header={
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">
-            Welcome back, {authUser?.name}
-          </h2>
-          <p className="text-sm text-gray-500">Here&apos;s what&apos;s happening at your clinic today.</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+            Good day, {authUser?.name?.split(' ')[0]}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">Here&apos;s your clinic overview for today.</p>
         </div>
       }
     >
-      <div className="py-8">
-        <div className="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-100">
-                  <Users className="h-6 w-6 text-teal-600" />
-                </div>
+      <div className="page-container space-y-8">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map(({ label, value, icon: Icon, color, isText }) => (
+            <div key={label} className="card p-6">
+              <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Total Patients</p>
-                  <p className="text-2xl font-bold text-gray-900">{patientCount}</p>
+                  <p className="text-sm font-medium text-slate-500">{label}</p>
+                  <p className={`mt-2 ${isText ? 'text-xl' : 'text-3xl'} font-extrabold text-slate-900`}>
+                    {value}
+                  </p>
+                </div>
+                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${color} text-white shadow-sm`}>
+                  <Icon className="h-6 w-6" />
                 </div>
               </div>
             </div>
+          ))}
 
-            <Link
-              to="/patients/create"
-              className="group rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-cyan-50 p-6 shadow-sm transition hover:border-teal-300 hover:shadow-md"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-600">
-                    <UserPlus className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">Add Patient</p>
-                    <p className="text-sm text-gray-500">Register a new visit</p>
-                  </div>
-                </div>
-                <ArrowRight className="h-5 w-5 text-teal-600 transition group-hover:translate-x-1" />
-              </div>
-            </Link>
+          <Link
+            to="/patients/create"
+            className="group card flex items-center justify-between p-6 transition hover:border-teal-300 hover:shadow-md"
+          >
+            <div>
+              <p className="font-bold text-slate-900">Add patient</p>
+              <p className="mt-1 text-sm text-slate-500">New record + tests & meds</p>
+            </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-100 text-teal-600 transition group-hover:bg-teal-600 group-hover:text-white">
+              <UserPlus className="h-6 w-6" />
+            </div>
+          </Link>
+        </div>
 
-            <Link
-              to="/patients"
-              className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:border-gray-300 hover:shadow-md"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100">
-                    <ClipboardList className="h-6 w-6 text-slate-600" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">View All Records</p>
-                    <p className="text-sm text-gray-500">Browse patient list</p>
-                  </div>
-                </div>
-                <ArrowRight className="h-5 w-5 text-gray-400 transition group-hover:translate-x-1" />
-              </div>
+        <div className="card">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+            <h2 className="font-bold text-slate-900">Recent patients</h2>
+            <Link to="/patients" className="inline-flex items-center gap-1 text-sm font-semibold text-teal-600">
+              View all <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-100 px-6 py-4">
-              <h3 className="font-semibold text-gray-800">Recent Patients</h3>
+          {recentPatients.length === 0 ? (
+            <div className="py-16 text-center">
+              <ClipboardList className="mx-auto h-10 w-10 text-slate-300" />
+              <p className="mt-3 text-sm text-slate-500">No patients yet.</p>
+              <Link to="/patients/create" className="btn-primary mt-4 inline-flex">
+                Add first patient
+              </Link>
             </div>
-            {recentPatients.length === 0 ? (
-              <div className="px-6 py-12 text-center text-gray-400">
-                <Users className="mx-auto h-10 w-10 text-gray-300" />
-                <p className="mt-3">No patients yet. Add your first patient to get started.</p>
-                <Link
-                  to="/patients/create"
-                  className="mt-4 inline-block text-sm font-semibold text-teal-600 hover:text-teal-800"
-                >
-                  Add Patient →
-                </Link>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {recentPatients.map((p) => (
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {recentPatients.map((p) => (
+                <li key={p.id}>
                   <Link
-                    key={p.id}
                     to={`/patients/${p.id}`}
-                    className="flex items-center justify-between px-6 py-4 transition hover:bg-gray-50"
+                    className="flex items-center justify-between px-6 py-4 transition hover:bg-teal-50/40"
                   >
                     <div>
-                      <p className="font-medium text-gray-900">{p.full_name}</p>
-                      <p className="text-sm text-gray-500">{p.national_id || 'No ID'}</p>
+                      <p className="font-semibold text-slate-900">{p.name}</p>
+                      <p className="text-sm text-slate-500">{p.phone || 'No phone'}</p>
                     </div>
-                    <span className="text-sm font-mono text-teal-600">#{p.id}</span>
+                    <span className="font-mono text-sm text-teal-600">#{p.id}</span>
                   </Link>
-                ))}
-              </div>
-            )}
-          </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </AuthenticatedLayout>
