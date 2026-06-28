@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { getDashboardPath, hasMinLevel } from '@/lib/permissions';
+import { getDashboardPath, hasMinLevel, isAllowedRole } from '@/lib/permissions';
 import { isSupabaseConfigured } from '@/lib/supabaseConfig';
 import SupabaseSetupAlert from '@/Components/SupabaseSetupAlert';
 
@@ -26,8 +26,8 @@ export default function RoleGuard({ allowedRoles, minLevel, children }) {
     );
   }
 
-  if (!authUser) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  if (!authUser || !isAllowedRole(authUser.role)) {
+    return <Navigate to="/login" state={{ from: location, reason: 'unauthorized' }} replace />;
   }
 
   if (allowedRoles && !allowedRoles.includes(authUser.role)) {

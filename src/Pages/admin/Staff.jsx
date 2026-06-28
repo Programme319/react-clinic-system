@@ -23,7 +23,7 @@ export default function StaffManagement() {
   const create = async (e) => {
     e.preventDefault();
     try {
-      await createStaffUser(form);
+      await createStaffUser({ ...form, callerId: authUser.id });
       await logCreate(authUser, 'user', form.email, { role: form.role });
       setMsg('Staff member created.');
       setForm({ name: '', email: '', password: '', role: ROLES.NURSE });

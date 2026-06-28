@@ -1,7 +1,7 @@
 import { Link, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getDashboardPath } from '@/lib/permissions';
+import { getDashboardPath, isAllowedRole } from '@/lib/permissions';
 import { ArrowRight, Stethoscope, Shield, Users, FileText, Clock, HeartPulse, CheckCircle2 } from 'lucide-react';
 import '@/css/pages/welcome.css';
 
@@ -16,7 +16,9 @@ export default function Welcome() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  if (!loading && authUser) return <Navigate to={getDashboardPath(authUser.role)} replace />;
+  if (!loading && authUser && isAllowedRole(authUser.role)) {
+    return <Navigate to={getDashboardPath(authUser.role)} replace />;
+  }
 
   const features = [
     { icon: Users, title: 'Patient Management', desc: 'Register patients, track visits, and access full medical histories in seconds.' },
@@ -33,8 +35,7 @@ export default function Welcome() {
             <span style={{ fontWeight: 800, fontSize: '1.125rem' }}>ClinicCare</span>
           </Link>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <Link to="/login" className="link-primary" style={{ fontSize: '0.875rem' }}>Sign in</Link>
-            <Link to="/register" className="btn btn-primary btn-sm">Get Started</Link>
+            <Link to="/login" className="btn btn-primary btn-sm">Staff sign in</Link>
           </div>
         </div>
       </nav>
@@ -51,10 +52,9 @@ export default function Welcome() {
             ClinicCare helps doctors and staff organize patient records, AI-assisted support, and prescriptions — all in one secure platform.
           </p>
           <div className="welcome__cta">
-            <Link to="/register" className="btn btn-primary btn-lg">
-              Start Free <ArrowRight size={18} />
+            <Link to="/login" className="btn btn-primary btn-lg">
+              Staff sign in <ArrowRight size={18} />
             </Link>
-            <Link to="/login" className="btn btn-secondary btn-lg">Sign In</Link>
           </div>
         </div>
       </section>
@@ -98,7 +98,7 @@ export default function Welcome() {
             { value: '100%', label: 'Cloud Secure', icon: Shield },
             { value: '24/7', label: 'Access Anywhere', icon: Clock },
             { value: 'AI', label: 'Ollama Powered', icon: HeartPulse },
-            { value: 'Free', label: 'To Get Started', icon: CheckCircle2 },
+            { value: 'Secure', label: 'Staff Access Only', icon: CheckCircle2 },
           ].map(({ value, label, icon: Icon }) => (
             <div key={label} className="welcome__stat-item">
               <div className="welcome__stat-icon"><Icon size={16} /></div>
@@ -111,9 +111,9 @@ export default function Welcome() {
 
       <section className="welcome__cta-section">
         <h2>Ready to modernize your clinic?</h2>
-        <p>Create your free account and start managing patients in minutes.</p>
-        <Link to="/register" className="btn btn-primary btn-lg">
-          Create Free Account <ArrowRight size={18} />
+        <p>Sign in with your administrator-assigned staff account to access your dashboard.</p>
+        <Link to="/login" className="btn btn-primary btn-lg">
+          Staff sign in <ArrowRight size={18} />
         </Link>
       </section>
 
@@ -125,8 +125,7 @@ export default function Welcome() {
           </div>
           <p className="welcome__footer-copy">© {new Date().getFullYear()} ClinicCare</p>
           <div className="welcome__footer-links">
-            <Link to="/login">Sign in</Link>
-            <Link to="/register">Register</Link>
+            <Link to="/login">Staff sign in</Link>
           </div>
         </div>
       </footer>

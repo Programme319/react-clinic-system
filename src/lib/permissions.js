@@ -5,6 +5,8 @@ export const ROLES = {
   ADMIN: 'Administrator',
 };
 
+export const ALLOWED_ROLES = Object.values(ROLES);
+
 export const PERMISSION_LEVELS = {
   [ROLES.NURSE]: 2,
   [ROLES.PHARMACIST]: 2,
@@ -28,17 +30,26 @@ export function hasMinLevel(role, minLevel) {
 }
 
 export function getDashboardPath(role) {
-  return ROLE_DASHBOARD_PATH[role] || '/login';
+  if (!isAllowedRole(role)) return '/login';
+  return ROLE_DASHBOARD_PATH[role];
 }
 
 export function normalizeRole(role) {
-  if (!role) return ROLES.NURSE;
+  if (!role) return null;
+
   const map = {
     doctor: ROLES.DOCTOR,
     pharmacist: ROLES.PHARMACIST,
     nurse: ROLES.NURSE,
     administrator: ROLES.ADMIN,
     admin: ROLES.ADMIN,
+    'clinic staff': ROLES.NURSE,
   };
-  return map[role.toLowerCase()] || role;
+
+  const normalized = map[String(role).toLowerCase()] || role;
+  return isAllowedRole(normalized) ? normalized : null;
+}
+
+export function isAllowedRole(role) {
+  return ALLOWED_ROLES.includes(role);
 }

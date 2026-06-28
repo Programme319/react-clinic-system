@@ -2,12 +2,12 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import RoleGuard from './guards/RoleGuard';
+import GuestOnlyRoute from './guards/GuestOnlyRoute';
 import ChatWidget from './Components/ChatWidget';
-import { ROLES, getDashboardPath } from './lib/permissions';
+import { ROLES, getDashboardPath, isAllowedRole } from './lib/permissions';
 
 import Welcome from './Pages/Welcome';
 import Login from './Pages/Auth/Login';
-import Register from './Pages/Auth/Register';
 
 import DoctorDashboard from './Pages/doctor/Dashboard';
 import DoctorPatients from './Pages/doctor/Patients';
@@ -38,16 +38,22 @@ import AdminSettings from './Pages/admin/Settings';
 function RoleRedirect() {
   const { authUser, loading } = useAuth();
   if (loading) return null;
-  if (!authUser) return <Navigate to="/login" replace />;
+  if (!authUser || !isAllowedRole(authUser.role)) return <Navigate to="/login" replace />;
   return <Navigate to={getDashboardPath(authUser.role)} replace />;
+}
+
+function AuthenticatedChat() {
+  const { authUser, loading } = useAuth();
+  if (loading || !authUser || !isAllowedRole(authUser.role)) return null;
+  return <ChatWidget />;
 }
 
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Welcome />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
+      <Route path="/register" element={<Navigate to="/login" replace />} />
       <Route path="/dashboard" element={<RoleRedirect />} />
 
       {/* Doctor — Level 3 */}
@@ -91,7 +97,7 @@ function App() {
     <AuthProvider>
       <Router>
         <AppRoutes />
-        <ChatWidget />
+        <AuthenticatedChat />
       </Router>
     </AuthProvider>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Checkbox from '@/Components/Checkbox';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
@@ -13,7 +13,7 @@ import '@/css/pages/auth.css';
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, authUser, loading } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
@@ -21,11 +21,11 @@ export default function Login() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    document.title = 'Sign in — ClinicCare';
-    if (!loading && authUser) {
-      navigate(getDashboardPath(authUser.role), { replace: true });
+    document.title = 'Staff sign in — ClinicCare';
+    if (location.state?.reason === 'unauthorized') {
+      setError('Your session expired or this account is not authorized.');
     }
-  }, [authUser, loading, navigate]);
+  }, [location.state]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -43,7 +43,7 @@ export default function Login() {
       const redirect = location.state?.from?.pathname || getDashboardPath(user.role);
       navigate(redirect, { replace: true });
     } catch (err) {
-      setError(err.message || 'Login failed');
+      setError(err.message || 'Sign in failed. Only staff accounts created by an administrator can access this system.');
       setPassword('');
     } finally {
       setProcessing(false);
@@ -51,32 +51,53 @@ export default function Login() {
   };
 
   return (
-    <GuestLayout title="Hospital sign in" subtitle="You will be routed to your role dashboard">
+    <GuestLayout title="Staff sign in" subtitle="Authorized hospital staff only">
       <SupabaseSetupAlert />
       <form onSubmit={submit} className="auth-form">
         {error && <div className="alert alert-error">{error}</div>}
 
+        <div className="alert alert-warning" style={{ fontSize: '0.8125rem' }}>
+          Public registration is disabled. You must have an administrator-created account with an assigned role (Doctor, Nurse, Pharmacist, or Administrator).
+        </div>
+
         <div className="auth-form__row">
-          <InputLabel htmlFor="email" value="Email" />
-          <TextInput id="email" type="email" className="input-field" value={email} onChange={(e) => setEmail(e.target.value)} required isFocused />
+          <InputLabel htmlFor="email" value="Staff email" />
+          <TextInput
+            id="email"
+            type="email"
+            className="input-field"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            isFocused
+            autoComplete="username"
+          />
         </div>
 
         <div className="auth-form__row">
           <InputLabel htmlFor="password" value="Password" />
-          <TextInput id="password" type="password" className="input-field" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <TextInput
+            id="password"
+            type="password"
+            className="input-field"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+          />
         </div>
 
         <label className="guest-layout__remember">
           <Checkbox checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-          Remember me
+          Remember me on this device
         </label>
 
         <button type="submit" className="btn btn-primary btn-full" disabled={processing}>
-          {processing ? 'Signing in…' : 'Sign in'}
+          {processing ? 'Verifying…' : 'Sign in as staff'}
         </button>
 
         <p className="guest-layout__form-footer" style={{ fontSize: '0.8125rem' }}>
-          Accounts are created by an Administrator. Contact your admin if you need access.
+          Need access? Ask your hospital administrator to create your account.
         </p>
       </form>
     </GuestLayout>
