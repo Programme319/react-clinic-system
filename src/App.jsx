@@ -1,84 +1,96 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-
-import { AuthProvider } from './contexts/AuthContext';
-import ProtectedRoute from './Components/ProtectedRoute';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import RoleGuard from './guards/RoleGuard';
 import ChatWidget from './Components/ChatWidget';
+import { ROLES, getDashboardPath } from './lib/permissions';
 
 import Welcome from './Pages/Welcome';
 import Login from './Pages/Auth/Login';
 import Register from './Pages/Auth/Register';
-import ForgotPassword from './Pages/Auth/ForgotPassword';
-import ResetPassword from './Pages/Auth/ResetPassword';
-import ConfirmPassword from './Pages/Auth/ConfirmPassword';
-import VerifyEmail from './Pages/Auth/VerifyEmail';
 
-import Dashboard from './Pages/Dashboard';
-import ProfileEdit from './Pages/Profile/Edit';
+import DoctorDashboard from './Pages/doctor/Dashboard';
+import DoctorPatients from './Pages/doctor/Patients';
+import DoctorHistory from './Pages/doctor/History';
+import DoctorLabs from './Pages/doctor/Labs';
+import DoctorPrescriptions from './Pages/doctor/Prescriptions';
+import DoctorAppointments from './Pages/doctor/Appointments';
 
-import PatientIndex from './Pages/Patient/Index';
-import PatientCreate from './Pages/Patient/Create';
-import PatientShow from './Pages/Patient/Show';
+import PharmacistDashboard from './Pages/pharmacist/Dashboard';
+import PrescriptionQueue from './Pages/pharmacist/Queue';
+import DrugInventory from './Pages/pharmacist/Inventory';
+import DispensingLog from './Pages/pharmacist/Dispensing';
+import DrugInteractions from './Pages/pharmacist/Interactions';
+
+import NurseDashboard from './Pages/nurse/Dashboard';
+import NursePatients from './Pages/nurse/Patients';
+import VitalsEntry from './Pages/nurse/Vitals';
+import NurseTasks from './Pages/nurse/Tasks';
+import MAR from './Pages/nurse/MAR';
+
+import AdminDashboard from './Pages/admin/Dashboard';
+import StaffManagement from './Pages/admin/Staff';
+import AdminScheduling from './Pages/admin/Scheduling';
+import AdminBilling from './Pages/admin/Billing';
+import AdminReports from './Pages/admin/Reports';
+import AdminSettings from './Pages/admin/Settings';
+
+function RoleRedirect() {
+  const { authUser, loading } = useAuth();
+  if (loading) return null;
+  if (!authUser) return <Navigate to="/login" replace />;
+  return <Navigate to={getDashboardPath(authUser.role)} replace />;
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<Welcome />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/dashboard" element={<RoleRedirect />} />
+
+      {/* Doctor — Level 3 */}
+      <Route path="/doctor" element={<RoleGuard allowedRoles={[ROLES.DOCTOR]}><DoctorDashboard /></RoleGuard>} />
+      <Route path="/doctor/patients" element={<RoleGuard allowedRoles={[ROLES.DOCTOR]}><DoctorPatients /></RoleGuard>} />
+      <Route path="/doctor/history" element={<RoleGuard allowedRoles={[ROLES.DOCTOR]}><DoctorHistory /></RoleGuard>} />
+      <Route path="/doctor/history/:id" element={<RoleGuard allowedRoles={[ROLES.DOCTOR]}><DoctorHistory /></RoleGuard>} />
+      <Route path="/doctor/labs" element={<RoleGuard allowedRoles={[ROLES.DOCTOR]}><DoctorLabs /></RoleGuard>} />
+      <Route path="/doctor/prescriptions" element={<RoleGuard allowedRoles={[ROLES.DOCTOR]}><DoctorPrescriptions /></RoleGuard>} />
+      <Route path="/doctor/appointments" element={<RoleGuard allowedRoles={[ROLES.DOCTOR]}><DoctorAppointments /></RoleGuard>} />
+
+      {/* Pharmacist — Level 2 */}
+      <Route path="/pharmacist" element={<RoleGuard allowedRoles={[ROLES.PHARMACIST]}><PharmacistDashboard /></RoleGuard>} />
+      <Route path="/pharmacist/queue" element={<RoleGuard allowedRoles={[ROLES.PHARMACIST]}><PrescriptionQueue /></RoleGuard>} />
+      <Route path="/pharmacist/inventory" element={<RoleGuard allowedRoles={[ROLES.PHARMACIST]}><DrugInventory /></RoleGuard>} />
+      <Route path="/pharmacist/dispensing" element={<RoleGuard allowedRoles={[ROLES.PHARMACIST]}><DispensingLog /></RoleGuard>} />
+      <Route path="/pharmacist/interactions" element={<RoleGuard allowedRoles={[ROLES.PHARMACIST]}><DrugInteractions /></RoleGuard>} />
+
+      {/* Nurse — Level 2 */}
+      <Route path="/nurse" element={<RoleGuard allowedRoles={[ROLES.NURSE]}><NurseDashboard /></RoleGuard>} />
+      <Route path="/nurse/patients" element={<RoleGuard allowedRoles={[ROLES.NURSE]}><NursePatients /></RoleGuard>} />
+      <Route path="/nurse/vitals" element={<RoleGuard allowedRoles={[ROLES.NURSE]}><VitalsEntry /></RoleGuard>} />
+      <Route path="/nurse/tasks" element={<RoleGuard allowedRoles={[ROLES.NURSE]}><NurseTasks /></RoleGuard>} />
+      <Route path="/nurse/mar" element={<RoleGuard allowedRoles={[ROLES.NURSE]}><MAR /></RoleGuard>} />
+
+      {/* Administrator — Level 4 */}
+      <Route path="/admin" element={<RoleGuard allowedRoles={[ROLES.ADMIN]}><AdminDashboard /></RoleGuard>} />
+      <Route path="/admin/staff" element={<RoleGuard allowedRoles={[ROLES.ADMIN]}><StaffManagement /></RoleGuard>} />
+      <Route path="/admin/scheduling" element={<RoleGuard allowedRoles={[ROLES.ADMIN]}><AdminScheduling /></RoleGuard>} />
+      <Route path="/admin/billing" element={<RoleGuard allowedRoles={[ROLES.ADMIN]}><AdminBilling /></RoleGuard>} />
+      <Route path="/admin/reports" element={<RoleGuard allowedRoles={[ROLES.ADMIN]}><AdminReports /></RoleGuard>} />
+      <Route path="/admin/settings" element={<RoleGuard allowedRoles={[ROLES.ADMIN]}><AdminSettings /></RoleGuard>} />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <Routes>
-          <Route path="/" element={<Welcome />} />
-
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/confirm-password" element={<ConfirmPassword />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfileEdit />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/patients"
-            element={
-              <ProtectedRoute>
-                <PatientIndex />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/patients/create"
-            element={
-              <ProtectedRoute>
-                <PatientCreate />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/patients/:id"
-            element={
-              <ProtectedRoute>
-                <PatientShow />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-
+        <AppRoutes />
         <ChatWidget />
       </Router>
     </AuthProvider>

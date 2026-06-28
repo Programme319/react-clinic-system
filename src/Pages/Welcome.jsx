@@ -1,6 +1,7 @@
 import { Link, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { getDashboardPath } from '@/lib/permissions';
 import { ArrowRight, Stethoscope, Shield, Users, FileText, Clock, HeartPulse, CheckCircle2 } from 'lucide-react';
 import '@/css/pages/welcome.css';
 
@@ -15,7 +16,7 @@ export default function Welcome() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  if (!loading && authUser) return <Navigate to="/dashboard" replace />;
+  if (!loading && authUser) return <Navigate to={getDashboardPath(authUser.role)} replace />;
 
   const features = [
     { icon: Users, title: 'Patient Management', desc: 'Register patients, track visits, and access full medical histories in seconds.' },

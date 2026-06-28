@@ -1,102 +1,82 @@
-import Checkbox from '@/Components/Checkbox';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import SupabaseSetupAlert from '@/Components/SupabaseSetupAlert';
-import TextInput from '@/Components/TextInput';
-import GuestLayout from '@/Layouts/GuestLayout';
-import { formatAuthError } from '@/lib/authErrors';
-import supabase from '@/lib/supabase';
-import { isSupabaseConfigured } from '@/lib/supabaseConfig';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import Checkbox from '@/Components/Checkbox';
+import InputLabel from '@/Components/InputLabel';
+import TextInput from '@/Components/TextInput';
+import SupabaseSetupAlert from '@/Components/SupabaseSetupAlert';
+import GuestLayout from '@/Layouts/GuestLayout';
+import { useAuth } from '@/contexts/AuthContext';
+import { getDashboardPath } from '@/lib/permissions';
+import { isSupabaseConfigured } from '@/lib/supabaseConfig';
 import '@/css/pages/auth.css';
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login, authUser, loading } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [data, setDataState] = useState({ email: '', password: '', remember: false });
-
-  const setData = (key, value) => setDataState((prev) => ({ ...prev, [key]: value }));
+  const [error, setError] = useState('');
 
   useEffect(() => {
     document.title = 'Sign in — ClinicCare';
-  }, []);
+    if (!loading && authUser) {
+      navigate(getDashboardPath(authUser.role), { replace: true });
+    }
+  }, [authUser, loading, navigate]);
 
   const submit = async (e) => {
     e.preventDefault();
     setProcessing(true);
-    setErrors({});
+    setError('');
 
-    if (!isSupabaseConfigured || !supabase) {
-      setErrors({ general: 'Supabase is not configured.' });
+    if (!isSupabaseConfigured) {
+      setError('Supabase is not configured.');
       setProcessing(false);
       return;
     }
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email.trim(),
-        password: data.password,
-      });
-      if (error) throw error;
-      navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
+      const user = await login(email, password);
+      const redirect = location.state?.from?.pathname || getDashboardPath(user.role);
+      navigate(redirect, { replace: true });
     } catch (err) {
-      setErrors({ general: formatAuthError(err) });
-      setData('password', '');
+      setError(err.message || 'Login failed');
+      setPassword('');
     } finally {
       setProcessing(false);
     }
   };
 
   return (
-    <GuestLayout title="Welcome back" subtitle="Sign in to manage your clinic">
+    <GuestLayout title="Hospital sign in" subtitle="You will be routed to your role dashboard">
       <SupabaseSetupAlert />
       <form onSubmit={submit} className="auth-form">
-        {errors.general && <div className="alert alert-error">{errors.general}</div>}
+        {error && <div className="alert alert-error">{error}</div>}
 
         <div className="auth-form__row">
-          <InputLabel htmlFor="email" value="Email address" />
-          <TextInput
-            id="email"
-            type="email"
-            value={data.email}
-            className="input-field"
-            autoComplete="username"
-            isFocused
-            onChange={(e) => setData('email', e.target.value)}
-          />
-          <InputError message={errors.email} />
+          <InputLabel htmlFor="email" value="Email" />
+          <TextInput id="email" type="email" className="input-field" value={email} onChange={(e) => setEmail(e.target.value)} required isFocused />
         </div>
 
         <div className="auth-form__row">
           <InputLabel htmlFor="password" value="Password" />
-          <TextInput
-            id="password"
-            type="password"
-            value={data.password}
-            className="input-field"
-            autoComplete="current-password"
-            onChange={(e) => setData('password', e.target.value)}
-          />
+          <TextInput id="password" type="password" className="input-field" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
 
-        <div className="guest-layout__form-actions">
-          <label className="guest-layout__remember">
-            <Checkbox checked={data.remember} onChange={(e) => setData('remember', e.target.checked)} />
-            Remember me
-          </label>
-          <Link to="/forgot-password" className="link-primary">Forgot password?</Link>
-        </div>
+        <label className="guest-layout__remember">
+          <Checkbox checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+          Remember me
+        </label>
 
-        <PrimaryButton className="btn-full" disabled={processing}>
+        <button type="submit" className="btn btn-primary btn-full" disabled={processing}>
           {processing ? 'Signing in…' : 'Sign in'}
-        </PrimaryButton>
+        </button>
 
-        <p className="guest-layout__form-footer">
-          No account? <Link to="/register" className="link-primary">Create one</Link>
+        <p className="guest-layout__form-footer" style={{ fontSize: '0.8125rem' }}>
+          Accounts are created by an Administrator. Contact your admin if you need access.
         </p>
       </form>
     </GuestLayout>
